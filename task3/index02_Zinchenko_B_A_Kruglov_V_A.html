@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Параметрическая связка</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+</head>
+<body>
+    <div id="app">
+        <h2>Нумерованный список</h2>
+        <ol :type="listType" :start="startValue">
+            <li>Элемент 1</li>
+            <li>Элемент 2</li>
+            <li>Элемент 3</li>
+        </ol>
+        <button @click="prevType" :disabled="currentIndex === 0">Назад</button>
+        <button @click="nextType" :disabled="currentIndex === types.length - 1">Вперёд</button>
+        <button @click="decreaseStart" :disabled="startValue <= 1">Меньше</button>
+        <button @click="increaseStart">Больше</button>
+        
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                types: ['1', 'A', 'a', 'I', 'i'],
+                currentIndex: 0,
+                startValue: 1
+            },
+            computed: {
+                listType() {
+                    return this.types[this.currentIndex];
+                }
+            },
+            methods: {
+                nextType() {
+                    if (this.currentIndex < this.types.length - 1) {
+                        this.currentIndex++;
+                    }
+                },
+                prevType() {
+                    if (this.currentIndex > 0) {
+                        this.currentIndex--;
+                    }
+                },
+                increaseStart() {
+                    this.startValue++;
+                },
+                decreaseStart() {
+                    if (this.startValue > 1) {
+                        this.startValue--;
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

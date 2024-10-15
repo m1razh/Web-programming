@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Методы и события</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+</head>
+<body>
+    <div id="app">
+        <h2>Управление списком</h2>
+        <select  v-model="currentItem">
+            <option v-for="(item, index) in items" :key="index" :value="index">{{ item }}</option>
+        </select><br>
+        <button @click="prevItem" :disabled="currentItem === 0">Предыдущий</button>
+        <button @click="nextItem" :disabled="currentItem === items.length - 1">Следующий</button>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                items: ['Элемент 1', 'Элемент 2', 'Элемент 3', 'Элемент 4', 'Элемент 5'],
+                currentItem: 0
+            },
+            methods: {
+                nextItem() {
+                    if (this.currentItem < this.items.length - 1) {
+                        this.currentItem++;
+                    }
+                },
+                prevItem() {
+                    if (this.currentItem > 0) {
+                        this.currentItem--;
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

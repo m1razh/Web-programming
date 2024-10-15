@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Переключение шаблонов</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+</head>
+<body>
+    <div id="app">
+        <h2>Шаблоны</h2>
+        
+        <label for="visibility">Отображение полей:</label>
+        <select v-model="visibility">
+            <option value="show">Показать</option>
+            <option value="hide">Скрыть</option>
+        </select>
+
+        <!-- Отображение полей, если выбрано "Показать" -->
+        <div v-if="visibility === 'show'">
+            <div v-if="currentTemplate === 'Author'">
+                <p>Author: <input type="text" v-model="author"></p>
+            </div>
+            <div v-if="currentTemplate === 'Title'">
+                <p>Title: <input type="text" v-model="title"></p>
+            </div>
+            <div v-if="currentTemplate === 'Editor'">
+                <p>Editor: <input type="text" v-model="editor"></p>
+            </div>
+            <div v-if="currentTemplate === 'Publisher'">
+                <p>Publisher: <input type="text" v-model="publisher"></p>
+            </div>
+
+            <!-- Первая кнопка: прокручивает шаблоны, затем исчезает -->
+            <button v-if="showFirstButton" @click="nextField('first')">Кнопка 1</button>
+            <!-- Вторая кнопка: становится видимой, когда первая исчезает -->
+            <button v-if="!showFirstButton && showSecondButton" @click="nextField('second')">Кнопка 2</button>
+        </div>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                currentTemplate: 'Author', 
+                templates: ['Author', 'Title', 'Editor', 'Publisher'], 
+                index: 0, 
+                visibility: 'show', 
+                showFirstButton: true, 
+                showSecondButton: false, 
+                author: '',
+                title: '',
+                editor: '',
+                publisher: ''
+            },
+            methods: {
+                // Переключение полей и кнопок
+                nextField(button) {
+                    if (this.index < this.templates.length - 1) {
+                        this.index++;
+                        this.currentTemplate = this.templates[this.index];
+                    } else {
+                        // Если текущая кнопка завершает цикл, переключаем на другую
+                        this.index = 0;
+                        this.currentTemplate = this.templates[this.index];
+                        if (button === 'first') {
+                            this.showFirstButton = false;
+                            this.showSecondButton = true;
+                        } else {
+                            this.showFirstButton = true;
+                            this.showSecondButton = false;
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
