@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>N-угольник Серпинского</title>
+    <style type="text/css">
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .controls label {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        .controls input {
+            width: 60px;
+            margin-right: 20px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        .controls button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .controls button:hover {
+            background-color: #45a049;
+        }
+        
+        .svg-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+        
+        svg {
+            border: 1px solid #000000;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+        }
+        
+        .chart-container {
+            width: 80%;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="container">
+        <div class="controls">
+            <label for="N">Количество вершин (N): </label>
+            <input type="number" v-model.number="N" min="3" max="10" id="N">
+            <label for="n">Количество точек (n): </label>
+            <input type="number" v-model.number="n" min="1000" max="50000" id="n">
+            <label for="d">Коэффициент (d): </label>
+            <input type="number" v-model.number="d" min="1" max="10" step="0.1" id="d">
+            <label for="R">Радиус (R): </label>
+            <input type="number" v-model.number="R" min="1" max="20" step="0.1" id="R">
+            <label for="sX">Смещение по X (sX): </label>
+            <input type="number" v-model.number="sX" min="0" max="20" step="0.1" id="sX">
+            <label for="sY">Смещение по Y (sY): </label>
+            <input type="number" v-model.number="sY" min="0" max="20" step="0.1" id="sY">
+            <button @click="drawN">Перерисовать</button>
+        </div>
+        <div class="svg-container">
+            <svg :width="X * 0.6" :height="Y * 0.6">
+                <rect v-for="r in rs" 
+                      :fill="r.color"
+                      fill-opacity="1"
+                      :x="r.x" 
+                      :y="r.y" 
+                      width="1" 
+                      height="1"/>
+            </svg>
+            <svg :width="X * 0.9" :height="Y * 0.9">
+                <rect v-for="r in rs" 
+                      :fill="r.color"
+                      fill-opacity="1"
+                      :x="r.x" 
+                      :y="r.y" 
+                      width="1" 
+                      height="1"/>
+            </svg>
+        </div>
+        <div class="chart-container">
+            <canvas id="performanceChart"></canvas>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        new Vue({
+            el: "#app",
+            data: {
+                X: 500,
+                Y: 500,
+                d: 1.6,
+                N: 5,
+                n: 20000,
+                R: 5,
+                sX: 10,
+                sY: 10,
+                rs: [],
+                previousPoint: null,
+                diagonalLength: Math.sqrt(500 * 500 + 500 * 500) / 2, // Половина длины диагонали
+                performanceData: {
+                    N: [],
+                    n: [],
+                    d: [],
+                    R: [],
+                    sX: [],
+                    sY: [],
+                    time: []
+                }
+            },
+            methods: {
+                drawN() {
+                    this.rs = [];
+                    let vertices = this.calculateVertices();
+                    let points = [vertices[0]];
+
+                    let startTime = performance.now();
+
+                    for (let i = 0; i < this.n; i++) {
+                        let randomVertex = vertices[Math.floor(Math.random() * vertices.length)];
+                        let randomPoint = points[Math.floor(Math.random() * points.length)];
+
+                        let newPoint = this.calculateNewPoint(randomVertex, randomPoint);
+                        let color = this.getPointColor(newPoint);
+                        this.rs.push({
+                            x: newPoint.x,
+                            y: newPoint.y,
+                            color: color
+                        });
+                        points.push([newPoint.x / (this.X / 20), newPoint.y / (this.Y / 20)]);
+
+                        if (i % 1000 === 0) {
+                            this.$forceUpdate(); // Обновление DOM для плавного рендеринга
+                        }
+                    }
+
+                    let endTime = performance.now();
+                    let timeTaken = endTime - startTime;
+
+                    this.performanceData.N.push(this.N);
+                    this.performanceData.n.push(this.n);
+                    this.performanceData.d.push(this.d);
+                    this.performanceData.R.push(this.R);
+                    this.performanceData.sX.push(this.sX);
+                    this.performanceData.sY.push(this.sY);
+                    this.performanceData.time.push(timeTaken);
+
+                    this.updateChart();
+
+                    let now = new Date();
+                    console.log("Завершено построение: " + now + " мс: " + now.getMilliseconds());
+                },
+                calculateVertices() {
+                    let vertices = [];
+                    for (let i = 0; i < this.N; i++) {
+                        let angle = 2 * Math.PI * i / this.N;
+                        let x = this.R * Math.cos(angle) + this.sX;
+                        let y = this.R * Math.sin(angle) + this.sY;
+                        vertices.push([x, y]);
+                    }
+                    return vertices;
+                },
+                calculateNewPoint(vertex, point) {
+                    let dx = Math.abs(vertex[0] - point[0]) / this.d;
+                    let dy = Math.abs(vertex[1] - point[1]) / this.d;
+                    let nx = vertex[0] > point[0] ? point[0] + dx : point[0] - dx;
+                    let ny = vertex[1] > point[1] ? point[1] + dy : point[1] - dy;
+
+                    return {
+                        x: nx * (this.X / 20),
+                        y: ny * (this.Y / 20)
+                    };
+                },
+                getPointColor(newPoint) {
+                    if (this.previousPoint) {
+                        let distance = Math.sqrt(Math.pow(newPoint.x - this.previousPoint.x, 2) + Math.pow(newPoint.y - this.previousPoint.y, 2));
+                        if (distance > this.diagonalLength) {
+                            return this.getRandomColor();
+                        }
+                    }
+                    this.previousPoint = newPoint;
+                    return "#000000";
+                },
+                getRandomColor() {
+                    return '#' + Math.floor(Math.random() * 16777215).toString(16);
+                },
+                updateChart() {
+                    if (this.chart) {
+                        this.chart.destroy();
+                    }
+
+                    this.chart = new Chart(document.getElementById('performanceChart').getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: this.performanceData.time.map((_, i) => `Run ${i + 1}`),
+                            datasets: [{
+                                label: 'Время выполнения (мс)',
+                                data: this.performanceData.time,
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            },
+            created() {
+                let now = new Date();
+                console.log("Начато построение: " + now + " мс: " + now.getMilliseconds());
+                this.drawN();
+            },
+            mounted() {
+                let now = new Date();
+                console.log("Отображено на странице: " + now + " мс: " + now.getMilliseconds());
+            }
+        });
+    </script>
+</body>
+
+</html>
